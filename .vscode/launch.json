@@ -13,7 +13,8 @@
             "debugOptions": [
                 "WaitOnAbnormalExit",
                 "WaitOnNormalExit",
-                "RedirectOutput"
+                "RedirectOutput",
+                "DebugStdLib"
             ]
         },
         {
