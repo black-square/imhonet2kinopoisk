@@ -29,10 +29,16 @@ def main():
     parser = argparse.ArgumentParser( fromfile_prefix_chars='@', description=DESCRIPTION, epilog=EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter )
     parser.convert_arg_line_to_args = sh_split
 
+    parser.add_argument( 'imhonet_export', metavar='HTML_FILE',  help="HTML file obtained from imhonet.ru" )
     parser.add_argument( '-u', '--user', metavar='NAME', required=True,  help="Username on Kinopoisk" )
     parser.add_argument( '-p', '--password', metavar='PASS', required=True,  help="Password on Kinopoisk" )
+    parser.add_argument( '-l', '--extra_links', metavar='JSON_DICT',  help="Additional dictionary to find missed links to kinopoisk" )
 
     args = parser.parse_args()
+
+    origin_rates = data.LoadFromHtml(args.imhonet_export, args.extra_links)
+
+    print(origin_rates)
 
     try:
         driver = None
