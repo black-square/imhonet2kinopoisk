@@ -1,7 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -82,7 +81,7 @@ def GetItemInfo(driver, url):
     res = data.ItemInfo()
 
     res.title = title.text
-    res.year = driver.find_element_by_class_name('movie-header__years').text
+    res.year = int(driver.find_element_by_class_name('movie-header__years').text)
 
     rating = utils.IfExists(driver.find_element_by_css_selector, '.user-rating__rating')
     watched = utils.IfExists(driver.find_element_by_css_selector, '.user-rating__icon-eye')
@@ -107,5 +106,8 @@ def GetItemInfo(driver, url):
         for idx, item in enumerate(folderItems):
             if utils.IfExists(item.find_element_by_css_selector, '.folders-menu__icon-folder_filled'):
                 res.folders.append(idx)
+
+        driver.find_element_by_class_name('popup__close').click()
+        WebDriverWait(driver, DELAY).until(EC.invisibility_of_element_located((By.CSS_SELECTOR,'div.overlay.overlay_forward')))
 
     return res

@@ -1,4 +1,8 @@
+import unicodedata
 from selenium.common.exceptions import NoSuchElementException, NoSuchFrameException
+
+def normalize_caseless(text):    
+    return unicodedata.normalize("NFKD", text.casefold().replace('ё', 'е'))
 
 def DumpHtml(driver):
     with open("dump.html", "w", encoding='utf-8') as text_file:

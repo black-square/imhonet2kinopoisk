@@ -2,6 +2,7 @@ from enum import Enum, unique
 from bs4 import BeautifulSoup
 import json
 import re
+import logging
 
 from utils import Struct
 
@@ -26,6 +27,22 @@ class ItemInfo(Struct):
     rating = None
     folders = None
 
+    def snippet(self):
+        return f"{self.title} ({self.year})"
+
+    def __repr__(self):
+        s = f"{{{self.snippet()}"
+
+        if self.rating:
+            s += f" = {self.rating.name}"
+
+        if self.folders:
+            s += f" {self.folders}"
+
+        s += "}}"
+
+        return s
+
 def LoadFromHtml(html_doc, extra_links_dict_file):
 
     if extra_links_dict_file:
@@ -49,19 +66,25 @@ def LoadFromHtml(html_doc, extra_links_dict_file):
         cont = td.contents
         item = ItemInfo()
 
+        title = td.text
+        link = extraLinks.get(title)
+
         if len(cont) == 2:
-            link = td.a['href']
+            fileLink = td.a['href']
+
+            if not link:
+                link = fileLink
+            else:
+                logging.info( "Link %s to '%s' was replaced by %s from the external dictionary", fileLink, title, link )
+
             item.title = td.a.string
             match = re.match(r"\s*\((\d+)\)", td.contents[1])
             item.year = int(match[1])
         else:
             assert len(cont) == 1
-            title = cont[0]
-
-            link = extraLinks.get(title)
 
             if not link:
-                print( "Link to '{}' hasn't been found. Use external dictionary to provide the link.".format(title) )
+                logging.warning( "Link to '%s' hasn't been found. Use the external dictionary to provide the link.", title )
 
             match = re.match(r"(.+?)\s*\((\d+)\)", title)
             item.title = match[1]
@@ -78,6 +101,6 @@ def LoadFromHtml(html_doc, extra_links_dict_file):
         else:
             item.rating = Rating(int(ratingStr))
         
-        res.append( (link, vars(item) ) )
+        res.append( (link, item ) )
 
     return res
