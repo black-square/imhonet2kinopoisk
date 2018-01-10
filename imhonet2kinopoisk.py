@@ -6,14 +6,13 @@ import crawler
 import data
 import utils
 
-
 def initLogging():
     log = logging.getLogger()
     log.setLevel(0)
 
     logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(logging.INFO)
 
-    format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    format = logging.Formatter("%(asctime)s %(levelname)8s: %(message)s")
 
     ch = logging.StreamHandler()
     ch.setFormatter(format)
@@ -22,6 +21,50 @@ def initLogging():
     fh = logging.FileHandler("imhonet2kinopoisk.log", mode='w', encoding='UTF8')
     fh.setFormatter(format)
     log.addHandler(fh)
+
+def ProcessPageImpl(driver, link, origin):
+    if not link:
+        logging.error('Link is not specified for %s', origin )
+        return
+
+    curr = crawler.GetItemInfo(driver, link)
+
+    nonmatches = []
+
+    if utils.normalize_caseless(origin.title) != utils.normalize_caseless(curr.title):
+        nonmatches.append('Titles')
+
+    if origin.year != curr.year:
+        nonmatches.append('Years')
+
+    if nonmatches:
+        logging.warning( '%s don\'t match "%s" != "%s"', ' and '.join(nonmatches), origin.snippet(), curr.snippet() )
+
+    if origin.rating != curr.rating:
+        logging.info('Rating for %s is changing to %s...', curr, origin.rating)
+        crawler.ChangeRating( driver, origin.rating )
+
+    if origin.folders != curr.folders:
+        logging.info('Folders for %s is changing to %s...', curr, origin.folders)
+        crawler.ChangeFolders( driver, origin.folders )
+
+def ProcessPage(driver, link, origin):
+    try:
+        ProcessPageImpl(driver, link, origin)
+    except Exception as e:
+        ProcessException(driver, e)
+
+def ProcessException(driver, e):
+    logging.critical("Exception found: {}".format(str(e)), exc_info=e)
+
+    if driver:
+        utils.Pause(driver)
+        driver.save_screenshot('dump_{}.png'.format(ProcessException.counter))
+        utils.DumpHtml(driver, 'dump_{}.html'.format(ProcessException.counter))
+        logging.info('Dumps are stored under index {}'.format(ProcessException.counter))
+        ProcessException.counter += 1  
+
+ProcessException.counter = 1
 
 DESCRIPTION = '''\
 Imhonet to Kinopoisk
@@ -51,6 +94,7 @@ def main():
     parser.add_argument( '-u', '--user', metavar='NAME', required=True,  help="Username on Kinopoisk" )
     parser.add_argument( '-p', '--password', metavar='PASS', required=True,  help="Password on Kinopoisk" )
     parser.add_argument( '-l', '--extra_links', metavar='JSON_DICT',  help="Additional dictionary to find missed links to kinopoisk" )
+    parser.add_argument( '-s', '--stop_on_exception', action='store_true',  help="Stot script execution on exception" )
 
     args = parser.parse_args()
 
@@ -63,35 +107,18 @@ def main():
     try:
         driver = None
         logging.info('Create driver...')
-        driver = crawler.CreateDriver()
+        driver = crawler.CreateDriver(args)
 
         logging.info('Login as "%s"...', args.user)
         crawler.Login(driver, args)
         logging.info('Login complete')
 
-        for link, origin in origin_rates:
-            if not link:
-                logging.error('Link is not specified for %s', origin )
-                continue
-        
-            logging.debug('Getting info for %s from "%s"...', origin, link)     
-            curr = crawler.GetItemInfo(driver, link)
-
-            nonmatches = []
-
-            if utils.normalize_caseless(origin.title) != utils.normalize_caseless(curr.title):
-                nonmatches.append('Titles')
-
-            if origin.year != curr.year:
-                nonmatches.append('Years')
-
-            if nonmatches:
-                logging.warning( '%s don\'t match "%s" != "%s"', ' and '.join(nonmatches), origin.snippet(), curr.snippet() )
+        for idx, (link, origin) in enumerate(origin_rates):
+            logging.debug('Getting info for #%s %s from "%s"...', idx, origin, link)   
+            ProcessPage(driver, link, origin)
 
     except Exception as e:
-        logging.critical("Exception found", exc_info=e)
-        if driver:
-            utils.DumpHtml(driver)
+        ProcessException(driver, e)   
         raise
     finally:
         if driver is not None:

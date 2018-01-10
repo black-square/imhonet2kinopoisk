@@ -100,4 +100,5 @@ ENV/
 # mypy
 .mypy_cache/
 args.conf
-dump.html
+dump*.html
+dump*.png

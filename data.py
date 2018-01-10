@@ -9,7 +9,7 @@ from utils import Struct
 
 @unique
 class Rating(Enum):
-    WATCHED = -1
+    WATCHED = 0
     R1 = 1
     R2 = 2
     R3 = 3
@@ -100,7 +100,7 @@ def LoadFromHtml(html_doc, extra_links_dict_file):
             item.folders = [0]
         else:
             item.rating = Rating(int(ratingStr))
-        
+
         res.append( (link, item ) )
 
     return res
