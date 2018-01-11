@@ -57,14 +57,15 @@ def ProcessPage(driver, link, origin):
 def ProcessException(driver, e):
     logging.critical("Exception found: {}".format(str(e)), exc_info=e)
 
+    ProcessException.counter += 1  
+
     if driver:
         utils.Pause(driver)
         driver.save_screenshot('dump_{}.png'.format(ProcessException.counter))
         utils.DumpHtml(driver, 'dump_{}.html'.format(ProcessException.counter))
         logging.info('Dumps are stored under index {}'.format(ProcessException.counter))
-        ProcessException.counter += 1  
-
-ProcessException.counter = 1
+        
+ProcessException.counter = 0
 
 DESCRIPTION = '''\
 Imhonet to Kinopoisk
@@ -114,8 +115,10 @@ def main():
         logging.info('Login complete')
 
         for idx, (link, origin) in enumerate(origin_rates):
-            logging.debug('Getting info for #%s %s from "%s"...', idx, origin, link)   
+            logging.debug('Getting info for #%s %s from "%s"...', idx + 1, origin, link)   
             ProcessPage(driver, link, origin)
+
+        logging.info('All entries has been processe. {} exceptions have been found', ProcessException.counter)   
 
     except Exception as e:
         ProcessException(driver, e)   

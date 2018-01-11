@@ -74,6 +74,9 @@ def LoadFromHtml(html_doc, extra_links_dict_file):
 
             if not link:
                 link = fileLink
+
+                if "kinopoisk.ru/film/" not in link:
+                    logging.warning( "Link %s to '%s' doesn't look right. Use the external dictionary to replace it.", link, title )
             else:
                 logging.info( "Link %s to '%s' was replaced by %s from the external dictionary", fileLink, title, link )
 
