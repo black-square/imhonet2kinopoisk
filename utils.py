@@ -1,11 +1,19 @@
 import unicodedata
+import re
 from selenium.common.exceptions import NoSuchElementException, NoSuchFrameException, StaleElementReferenceException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 
-def normalize_caseless(text):    
-    return unicodedata.normalize("NFKD", text.casefold().replace('ё', 'е'))
+
+def normalize_caseless(text):
+    text = text.casefold()
+    text = text.replace('ё', 'е')
+    text = re.sub( r"([\-,:!?\–«»\"\'·.])", r' ', text )
+    text = re.sub( r'\s{2,}', r' ', text )
+    text = text.strip()
+    
+    return unicodedata.normalize("NFKD", text)
 
 def DumpHtml(driver, fileName):
     with open(fileName, "w", encoding='utf-8') as text_file:
