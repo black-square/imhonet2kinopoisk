@@ -6,7 +6,9 @@ import crawler
 import data
 import utils
 
-def initLogging():
+from pathlib import Path
+
+def InitLogging():
     log = logging.getLogger()
     log.setLevel(0)
 
@@ -67,6 +69,10 @@ def ProcessException(driver, e):
         
 ProcessException.counter = 0
 
+def DeleteDumpFiles():
+    for p in Path(".").glob("dump_*.*"):
+        p.unlink()
+
 DESCRIPTION = '''\
 Imhonet to Kinopoisk
 '''
@@ -96,10 +102,12 @@ def main():
     parser.add_argument( '-p', '--password', metavar='PASS', required=True,  help="Password on Kinopoisk" )
     parser.add_argument( '-l', '--extra_links', metavar='JSON_DICT',  help="Additional dictionary to find missed links to kinopoisk" )
     parser.add_argument( '-s', '--stop_on_exception', action='store_true',  help="Stot script execution on exception" )
+    parser.add_argument( '-i', '--start_from_idx', metavar='INDEX', type=int, default=1, help="Start export from entity %(metavar)s" )
 
     args = parser.parse_args()
 
-    initLogging()
+    InitLogging()
+    DeleteDumpFiles()
 
     logging.info('Loading original data from "%s"...', args.imhonet_export)
     origin_rates = data.LoadFromHtml(args.imhonet_export, args.extra_links)
@@ -114,8 +122,10 @@ def main():
         crawler.Login(driver, args)
         logging.info('Login complete')
 
-        for idx, (link, origin) in enumerate(origin_rates):
-            logging.debug('Getting info for #%s %s from "%s"...', idx + 1, origin, link)   
+
+
+        for idx, (link, origin) in enumerate(origin_rates[args.start_from_idx - 1:], start = args.start_from_idx):
+            logging.debug('Getting info for #%s %s from "%s"...', idx, origin, link)   
             ProcessPage(driver, link, origin)
 
         logging.info('All entries has been processe. {} exceptions have been found', ProcessException.counter)   
