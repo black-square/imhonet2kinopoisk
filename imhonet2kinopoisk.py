@@ -122,13 +122,11 @@ def main():
         crawler.Login(driver, args)
         logging.info('Login complete')
 
-
-
         for idx, (link, origin) in enumerate(origin_rates[args.start_from_idx - 1:], start = args.start_from_idx):
             logging.debug('Getting info for #%s %s from "%s"...', idx, origin, link)   
             ProcessPage(driver, link, origin)
 
-        logging.info('All entries has been processe. {} exceptions have been found', ProcessException.counter)   
+        logging.info('All entries has been processe. %s exceptions have been found', ProcessException.counter)   
 
     except Exception as e:
         ProcessException(driver, e)   
